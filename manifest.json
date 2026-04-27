@@ -1,24 +1,470 @@
-{
-  "name": "我的工作",
-  "short_name": "我的工作",
-  "description": "To-do list 同 Calendar",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1a1a1a",
-  "lang": "zh-HK",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="我的工作">
+<title>我的工作</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;font-size:16px}
+.nav{display:flex;background:#fff;border-bottom:1px solid #e8e6df;position:sticky;top:0;z-index:50}
+.nav-tab{flex:1;padding:16px 0;text-align:center;font-size:14px;font-weight:500;color:#888;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent}
+.nav-tab.active{color:#1a1a1a;border-bottom:2px solid #1a1a1a}
+.page{display:none;padding:18px;max-width:520px;margin:0 auto;padding-bottom:90px}
+.page.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+h1{font-size:20px;font-weight:600}
+.card{background:#fff;border-radius:16px;padding:16px 18px;margin-bottom:12px;border:1px solid #e8e6df}
+.fab{position:fixed;bottom:28px;right:24px;width:56px;height:56px;border-radius:50%;background:#1a1a1a;color:#fff;font-size:26px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 14px rgba(0,0,0,.18);z-index:40}
+.btn{padding:10px 18px;border-radius:12px;border:1px solid #ddd;background:#fff;font-size:14px;cursor:pointer;color:#1a1a1a}
+.btn.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn.danger{color:#c0392b;border-color:#e8e6df}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:13px;color:#888;font-weight:500}
+.field input,.field select,.field textarea{padding:11px 14px;border-radius:12px;border:1px solid #ddd;font-size:15px;background:#fff;color:#1a1a1a;width:100%;outline:none;font-family:inherit}
+.field textarea{resize:vertical;min-height:72px}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#1a1a1a}
+/* filter */
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.pill{font-size:13px;padding:6px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;color:#888;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.pill.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+/* todo */
+.todo-item{display:flex;gap:12px;align-items:flex-start}
+.todo-check{margin-top:3px;width:20px;height:20px;cursor:pointer;accent-color:#1a1a1a;flex-shrink:0}
+.todo-body{flex:1;min-width:0}
+.todo-text{font-size:15px;line-height:1.5;color:#1a1a1a;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.todo-item.done .todo-text{text-decoration:line-through;color:#bbb}
+.todo-note{font-size:13px;color:#888;margin-top:4px;line-height:1.5}
+.todo-meta{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500}
+.badge-工作{background:#dbeafe;color:#1e40af}
+.badge-網站{background:#d1fae5;color:#065f46}
+.badge-招募{background:#fef3c7;color:#92400e}
+.badge-活動{background:#fce7f3;color:#9d174d}
+.badge-其他{background:#f1f0eb;color:#444}
+.star{font-size:15px;cursor:pointer;color:#ddd;line-height:1}
+.star.on{color:#f59e0b}
+.due{font-size:12px}
+.due-over{color:#c0392b;font-weight:600}
+.due-soon{color:#d97706;font-weight:500}
+.due-ok{color:#059669}
+.item-actions{display:flex;gap:2px;flex-shrink:0;margin-top:1px}
+.icon-btn{background:transparent;border:none;cursor:pointer;padding:5px 7px;font-size:16px;color:#bbb;border-radius:8px}
+.icon-btn:active{background:#f0f0ec}
+/* done section toggle */
+.done-toggle{font-size:13px;color:#888;cursor:pointer;padding:8px 0;display:flex;align-items:center;gap:6px;user-select:none}
+.done-toggle:hover{color:#555}
+/* calendar */
+.cal-nav-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav-btn{background:#fff;border:1px solid #ddd;border-radius:10px;padding:8px 16px;font-size:18px;cursor:pointer;color:#1a1a1a}
+.cal-title{font-size:16px;font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:14px}
+.cal-dow{font-size:11px;color:#aaa;text-align:center;padding:5px 0}
+.cal-day{min-height:42px;font-size:13px;text-align:center;padding:6px 2px 3px;border-radius:10px;color:#888;position:relative}
+.cal-day.cur-month{color:#1a1a1a}
+.cal-day.today{background:#1a1a1a;color:#fff;font-weight:600}
+.dot-row{display:flex;justify-content:center;gap:2px;margin-top:3px}
+.dot{width:5px;height:5px;border-radius:50%}
+.dot-event{background:#378ADD}
+.dot-todo{background:#d97706}
+.dot-over{background:#c0392b}
+.section-title{font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:18px 0 10px}
+.event-item{display:flex;gap:12px;align-items:flex-start}
+.e-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.e-dot.type-event{background:#378ADD}
+.e-dot.type-todo{background:#d97706}
+.e-name{font-size:15px;color:#1a1a1a}
+.e-date{font-size:12px;color:#888;margin-top:3px}
+/* today widget */
+.today-date{font-size:13px;color:#888;margin-bottom:18px}
+.widget-section{margin-bottom:20px}
+.widget-title{font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.today-empty{font-size:14px;color:#bbb;padding:12px 0}
+/* modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:22px 22px 0 0;padding:22px 20px 40px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:18px}
+.star-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.star-row span{font-size:14px;color:#888}
+.star-big{font-size:26px;cursor:pointer;color:#ddd}
+.star-big.on{color:#f59e0b}
+.empty{text-align:center;padding:40px 0;color:#bbb;font-size:15px}
+/* settings */
+.settings-section{margin-bottom:16px}
+.settings-label{font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <button class="nav-tab active" onclick="showPage('today',this)">今日</button>
+  <button class="nav-tab" onclick="showPage('todo',this)">任務</button>
+  <button class="nav-tab" onclick="showPage('calendar',this)">日曆</button>
+  <button class="nav-tab" onclick="showPage('settings',this)">設定</button>
+</nav>
+
+<!-- TODAY PAGE -->
+<div class="page active" id="page-today">
+  <div class="page-header"><h1>今日</h1></div>
+  <div class="today-date" id="today-date"></div>
+  <div class="widget-section">
+    <div class="widget-title">今日截止 / 活動</div>
+    <div id="today-due"></div>
+  </div>
+  <div class="widget-section">
+    <div class="widget-title">⭐ 重要任務</div>
+    <div id="today-starred"></div>
+  </div>
+  <div class="widget-section">
+    <div class="widget-title">即將到來（3日內）</div>
+    <div id="today-upcoming"></div>
+  </div>
+</div>
+
+<!-- TODO PAGE -->
+<div class="page" id="page-todo">
+  <div class="page-header"><h1>任務</h1></div>
+  <div class="filter-row" id="filter-row">
+    <button class="pill active" onclick="filterCat(this,'all')">全部</button>
+    <button class="pill" onclick="filterCat(this,'工作')">工作</button>
+    <button class="pill" onclick="filterCat(this,'網站')">網站</button>
+    <button class="pill" onclick="filterCat(this,'招募')">招募</button>
+    <button class="pill" onclick="filterCat(this,'活動')">活動</button>
+    <button class="pill" onclick="filterCat(this,'其他')">其他</button>
+  </div>
+  <div id="todo-list"></div>
+  <button class="fab" onclick="openTodoModal()">+</button>
+</div>
+
+<!-- CALENDAR PAGE -->
+<div class="page" id="page-calendar">
+  <div class="cal-nav-row">
+    <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+    <span class="cal-title" id="cal-label"></span>
+    <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div class="section-title">即將到來</div>
+  <div id="upcoming-list"></div>
+  <button class="fab" onclick="openEventModal()">+</button>
+</div>
+
+<!-- SETTINGS PAGE -->
+<div class="page" id="page-settings">
+  <div class="page-header"><h1>設定</h1></div>
+  <div class="card">
+    <div class="settings-label">資料同步</div>
+    <p style="font-size:14px;color:#666;line-height:1.6;margin-bottom:14px">匯出資料，再係另一部裝置匯入，即可同步。</p>
+    <button class="btn primary" style="width:100%;margin-bottom:10px" onclick="exportData()">📤 匯出資料</button>
+    <button class="btn" style="width:100%;margin-bottom:8px" onclick="document.getElementById('import-file').click()">📥 匯入資料</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+    <span id="import-msg" style="font-size:13px;color:#059669;display:none">✓ 匯入成功！</span>
+    <p style="font-size:12px;color:#bbb;margin-top:8px">匯入會覆蓋現有資料，建議先匯出備份。</p>
+  </div>
+  <div class="card" style="margin-top:4px">
+    <div class="settings-label">清除資料</div>
+    <button class="btn danger" style="width:100%" onclick="clearAll()">🗑 清除所有資料</button>
+  </div>
+</div>
+
+<!-- TODO MODAL -->
+<div class="modal-overlay" id="modal-todo">
+  <div class="modal">
+    <div class="modal-title" id="modal-todo-label">新增任務</div>
+    <div class="star-row">
+      <span>重要</span>
+      <span class="star-big" id="modal-star" onclick="toggleModalStar()">★</span>
+    </div>
+    <div class="field"><label>任務名稱</label><input id="ti-text" placeholder="輸入任務…"></div>
+    <div class="field"><label>分類</label>
+      <select id="ti-cat">
+        <option value="工作">工作</option>
+        <option value="網站">網站</option>
+        <option value="招募">招募</option>
+        <option value="活動">活動</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div class="field"><label>截止日期（可選）</label><input type="date" id="ti-due"></div>
+    <div class="field"><label>備註（可選）</label><textarea id="ti-note" placeholder="備註…"></textarea></div>
+    <div class="btn-row">
+      <button class="btn danger" id="ti-del-btn" style="display:none" onclick="deleteTodo()">刪除</button>
+      <button class="btn" onclick="closeModal('modal-todo')">取消</button>
+      <button class="btn primary" onclick="saveTodo()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT MODAL -->
+<div class="modal-overlay" id="modal-event">
+  <div class="modal">
+    <div class="modal-title" id="modal-event-label">新增活動</div>
+    <div class="field"><label>活動名稱</label><input id="ei-name" placeholder="輸入活動名稱…"></div>
+    <div class="field"><label>日期</label><input type="date" id="ei-date"></div>
+    <div class="btn-row">
+      <button class="btn danger" id="ei-del-btn" style="display:none" onclick="deleteEvent()">刪除</button>
+      <button class="btn" onclick="closeModal('modal-event')">取消</button>
+      <button class="btn primary" onclick="saveEvent()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TODAY=new Date();TODAY.setHours(0,0,0,0);
+function toD(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);const dt=new Date(y,m-1,d);dt.setHours(0,0,0,0);return dt;}
+function toS(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmt(s){if(!s)return'';const d=toD(s);return`${d.getMonth()+1}月${d.getDate()}日`;}
+function dday(s){const d=toD(s);const diff=Math.round((d-TODAY)/86400000);if(diff<0)return{t:`逾期 ${-diff} 日`,c:'due-over'};if(diff===0)return{t:'今日',c:'due-over'};if(diff<=3)return{t:`還有 ${diff} 日`,c:'due-soon'};return{t:`還有 ${diff} 日`,c:'due-ok'};}
+const DAYS=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+const MONTHS=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+
+let todos=JSON.parse(localStorage.getItem('wm2_todos')||'[]');
+let events=JSON.parse(localStorage.getItem('wm2_events')||'[]');
+let curFilter='all',editTodo=null,editEvent=null,modalStar=false,showDone=false;
+let calY=TODAY.getFullYear(),calM=TODAY.getMonth();
+
+function save(){localStorage.setItem('wm2_todos',JSON.stringify(todos));localStorage.setItem('wm2_events',JSON.stringify(events));}
+
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  renderAll();
 }
+
+function filterCat(el,cat){
+  curFilter=cat;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderTodos();
+}
+
+function renderTodos(){
+  const el=document.getElementById('todo-list');
+  let items=todos.map((t,i)=>({...t,i})).filter(t=>curFilter==='all'||t.cat===curFilter);
+  const active=items.filter(t=>!t.done).sort((a,b)=>{
+    if(a.star!==b.star)return a.star?-1:1;
+    if(a.due&&b.due)return a.due.localeCompare(b.due);
+    if(a.due)return-1;if(b.due)return 1;return 0;
+  });
+  const done=items.filter(t=>t.done);
+  let html=active.map(t=>todoHTML(t)).join('');
+  if(done.length){
+    html+=`<div class="done-toggle" onclick="toggleDone()">
+      <span>${showDone?'▾':'▸'}</span>
+      <span>已完成（${done.length}）</span>
+    </div>`;
+    if(showDone)html+=done.map(t=>todoHTML(t)).join('');
+  }
+  if(!active.length&&!done.length)html='<div class="empty">沒有任務 ✓</div>';
+  el.innerHTML=html;
+}
+
+function todoHTML(t){
+  let dueHtml='';
+  if(t.due){const{t:dt,c:dc}=dday(t.due);dueHtml=`<span class="due ${dc}">${fmt(t.due)} · ${dt}</span>`;}
+  const noteHtml=t.note?`<div class="todo-note">${t.note}</div>`:'';
+  return`<div class="card"><div class="todo-item${t.done?' done':''}">
+    <input type="checkbox" class="todo-check" ${t.done?'checked':''} onchange="toggleTodo(${t.i})">
+    <div class="todo-body">
+      <div class="todo-text">
+        <span class="star ${t.star?'on':''}" onclick="toggleStar(${t.i})">★</span>
+        ${t.text}
+      </div>
+      ${noteHtml}
+      <div class="todo-meta"><span class="badge badge-${t.cat}">${t.cat}</span>${dueHtml}</div>
+    </div>
+    <div class="item-actions"><button class="icon-btn" onclick="openEditTodo(${t.i})">✏️</button></div>
+  </div></div>`;
+}
+
+function toggleDone(){showDone=!showDone;renderTodos();}
+function toggleTodo(i){todos[i].done=!todos[i].done;save();renderAll();}
+function toggleStar(i){todos[i].star=!todos[i].star;save();renderAll();}
+
+function renderCalendar(){
+  document.getElementById('cal-label').textContent=`${calY} 年 ${MONTHS[calM]}`;
+  const dows=['日','一','二','三','四','五','六'];
+  const days=new Date(calY,calM+1,0).getDate();
+  const first=new Date(calY,calM,1).getDay();
+  let html=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<first;i++)html+=`<div></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=toS(new Date(calY,calM,d));
+    const isToday=toD(ds).getTime()===TODAY.getTime();
+    const hasEv=events.some(e=>e.date===ds);
+    const todoDue=todos.filter(t=>t.due===ds&&!t.done);
+    const hasOver=todoDue.some(t=>toD(t.due)<TODAY);
+    let dots='';
+    if(hasEv)dots+=`<span class="dot dot-event"></span>`;
+    if(todoDue.length)dots+=`<span class="dot ${hasOver?'dot-over':'dot-todo'}"></span>`;
+    html+=`<div class="cal-day cur-month${isToday?' today':''}">${d}${dots?`<div class="dot-row">${dots}</div>`:''}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+}
+
+function renderUpcoming(){
+  const el=document.getElementById('upcoming-list');
+  const all=[
+    ...events.map((e,i)=>({name:e.name,date:e.date,type:'event',idx:i})),
+    ...todos.filter(t=>t.due&&!t.done).map((t,_)=>({name:t.text,date:t.due,type:'todo',idx:todos.indexOf(t)}))
+  ].filter(e=>toD(e.date)>=TODAY).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,10);
+  if(!all.length){el.innerHTML='<div class="empty">暫時沒有事項</div>';return;}
+  el.innerHTML=all.map(e=>{
+    const{t:dt,c:dc}=dday(e.date);
+    return`<div class="card"><div class="event-item">
+      <span class="e-dot type-${e.type}"></span>
+      <div style="flex:1;min-width:0">
+        <div class="e-name">${e.name}</div>
+        <div class="e-date">${fmt(e.date)} · <span class="due ${dc}">${dt}</span></div>
+      </div>
+      <button class="icon-btn" onclick="${e.type==='event'?`openEditEvent(${e.idx})`:`openEditTodo(${e.idx})`}">✏️</button>
+    </div></div>`;
+  }).join('');
+}
+
+function renderToday(){
+  const todayS=toS(TODAY);
+  document.getElementById('today-date').textContent=`${TODAY.getFullYear()}年${TODAY.getMonth()+1}月${TODAY.getDate()}日 ${DAYS[TODAY.getDay()]}`;
+
+  // today due + events
+  const dueEl=document.getElementById('today-due');
+  const dueItems=[
+    ...events.filter(e=>e.date===todayS).map(e=>({name:e.name,type:'event'})),
+    ...todos.filter(t=>t.due===todayS&&!t.done).map(t=>({name:t.text,type:'todo',note:t.note,cat:t.cat,idx:todos.indexOf(t)}))
+  ];
+  dueEl.innerHTML=dueItems.length?dueItems.map(e=>`<div class="card"><div class="event-item">
+    <span class="e-dot type-${e.type}"></span>
+    <div style="flex:1;min-width:0">
+      <div class="e-name">${e.name}</div>
+      ${e.cat?`<div class="e-date"><span class="badge badge-${e.cat}">${e.cat}</span></div>`:''}
+    </div>
+  </div></div>`).join(''):'<div class="today-empty">今日沒有截止任務</div>';
+
+  // starred
+  const starEl=document.getElementById('today-starred');
+  const starred=todos.filter(t=>t.star&&!t.done);
+  starEl.innerHTML=starred.length?starred.map(t=>`<div class="card"><div class="todo-item">
+    <input type="checkbox" class="todo-check" onchange="toggleTodo(${todos.indexOf(t)})">
+    <div class="todo-body">
+      <div class="todo-text"><span class="star on">★</span>${t.text}</div>
+      ${t.note?`<div class="todo-note">${t.note}</div>`:''}
+      <div class="todo-meta"><span class="badge badge-${t.cat}">${t.cat}</span>${t.due?`<span class="due ${dday(t.due).c}">${fmt(t.due)} · ${dday(t.due).t}</span>`:''}</div>
+    </div>
+  </div></div>`).join(''):'<div class="today-empty">沒有重要任務</div>';
+
+  // upcoming 3 days
+  const upEl=document.getElementById('today-upcoming');
+  const in3=new Date(TODAY);in3.setDate(in3.getDate()+3);
+  const upcoming=[
+    ...events.filter(e=>{const d=toD(e.date);return d>TODAY&&d<=in3;}).map(e=>({name:e.name,date:e.date,type:'event'})),
+    ...todos.filter(t=>t.due&&!t.done).filter(t=>{const d=toD(t.due);return d>TODAY&&d<=in3;}).map(t=>({name:t.text,date:t.due,type:'todo',cat:t.cat}))
+  ].sort((a,b)=>a.date.localeCompare(b.date));
+  upEl.innerHTML=upcoming.length?upcoming.map(e=>{
+    const{t:dt,c:dc}=dday(e.date);
+    return`<div class="card"><div class="event-item">
+      <span class="e-dot type-${e.type}"></span>
+      <div style="flex:1"><div class="e-name">${e.name}</div>
+      <div class="e-date">${fmt(e.date)} · <span class="due ${dc}">${dt}</span></div></div>
+    </div></div>`;
+  }).join(''):'<div class="today-empty">3日內沒有事項</div>';
+}
+
+function renderAll(){renderTodos();renderCalendar();renderUpcoming();renderToday();}
+
+// modal
+function toggleModalStar(){modalStar=!modalStar;document.getElementById('modal-star').className='star-big'+(modalStar?' on':'');}
+
+function openTodoModal(){
+  editTodo=null;modalStar=false;
+  document.getElementById('modal-todo-label').textContent='新增任務';
+  document.getElementById('ti-text').value='';
+  document.getElementById('ti-cat').value='工作';
+  document.getElementById('ti-due').value='';
+  document.getElementById('ti-note').value='';
+  document.getElementById('modal-star').className='star-big';
+  document.getElementById('ti-del-btn').style.display='none';
+  document.getElementById('modal-todo').classList.add('open');
+}
+function openEditTodo(i){
+  editTodo=i;const t=todos[i];modalStar=!!t.star;
+  document.getElementById('modal-todo-label').textContent='編輯任務';
+  document.getElementById('ti-text').value=t.text;
+  document.getElementById('ti-cat').value=t.cat;
+  document.getElementById('ti-due').value=t.due||'';
+  document.getElementById('ti-note').value=t.note||'';
+  document.getElementById('modal-star').className='star-big'+(modalStar?' on':'');
+  document.getElementById('ti-del-btn').style.display='';
+  document.getElementById('modal-todo').classList.add('open');
+}
+function saveTodo(){
+  const text=document.getElementById('ti-text').value.trim();if(!text)return;
+  const cat=document.getElementById('ti-cat').value;
+  const due=document.getElementById('ti-due').value;
+  const note=document.getElementById('ti-note').value.trim();
+  if(editTodo!==null){todos[editTodo]={...todos[editTodo],text,cat,due,note,star:modalStar};}
+  else{todos.push({text,cat,due,note,done:false,star:modalStar});}
+  save();closeModal('modal-todo');renderAll();
+}
+function deleteTodo(){if(editTodo===null)return;todos.splice(editTodo,1);save();closeModal('modal-todo');renderAll();}
+
+function openEventModal(){
+  editEvent=null;
+  document.getElementById('modal-event-label').textContent='新增活動';
+  document.getElementById('ei-name').value='';
+  document.getElementById('ei-date').value='';
+  document.getElementById('ei-del-btn').style.display='none';
+  document.getElementById('modal-event').classList.add('open');
+}
+function openEditEvent(i){
+  editEvent=i;const e=events[i];
+  document.getElementById('modal-event-label').textContent='編輯活動';
+  document.getElementById('ei-name').value=e.name;
+  document.getElementById('ei-date').value=e.date;
+  document.getElementById('ei-del-btn').style.display='';
+  document.getElementById('modal-event').classList.add('open');
+}
+function saveEvent(){
+  const name=document.getElementById('ei-name').value.trim();
+  const date=document.getElementById('ei-date').value;
+  if(!name||!date)return;
+  if(editEvent!==null){events[editEvent]={name,date};}
+  else{events.push({name,date});}
+  save();closeModal('modal-event');renderAll();
+}
+function deleteEvent(){if(editEvent===null)return;events.splice(editEvent,1);save();closeModal('modal-event');renderAll();}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+function changeMonth(d){calM+=d;if(calM>11){calM=0;calY++;}else if(calM<0){calM=11;calY--;}renderCalendar();renderUpcoming();}
+
+function exportData(){
+  const data=JSON.stringify({todos,events,exported:new Date().toISOString()},null,2);
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
+  a.download='工作管理_'+toS(TODAY)+'.json';a.click();
+}
+function importData(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{const d=JSON.parse(e.target.result);if(d.todos)todos=d.todos;if(d.events)events=d.events;save();renderAll();
+    const msg=document.getElementById('import-msg');msg.style.display='';setTimeout(()=>msg.style.display='none',3000);}
+    catch{alert('檔案格式有問題，請重試。');}input.value='';
+  };reader.readAsText(file);
+}
+function clearAll(){if(confirm('確定清除所有資料？')){todos=[];events=[];save();renderAll();}}
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+renderAll();
+</script>
+</body>
+</html>
